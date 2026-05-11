@@ -1,0 +1,66 @@
+!nvidia-smi
+%%writefile vector_add.cu
+
+#include <stdio.h>
+#include <cuda_runtime.h>
+
+__global__ void add(int *a, int *b, int *c)
+{
+    int id = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if(id < 5)
+    {
+        c[id] = a[id] + b[id];
+    }
+}
+
+int main()
+{
+    int h_a[5];
+    int h_b[5];
+    int h_c[5];
+
+    printf("Enter 5 integer elements for vector A:\n");
+
+    for(int i = 0; i < 5; i++)
+    {
+        scanf("%d", &h_a[i]);
+    }
+
+    printf("Enter 5 integer elements for vector B:\n");
+
+    for(int i = 0; i < 5; i++)
+    {
+        scanf("%d", &h_b[i]);
+    }
+
+    int *d_a, *d_b, *d_c;
+
+    cudaMalloc((void**)&d_a, 5 * sizeof(int));
+    cudaMalloc((void**)&d_b, 5 * sizeof(int));
+    cudaMalloc((void**)&d_c, 5 * sizeof(int));
+
+    cudaMemcpy(d_a, h_a, 5 * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, h_b, 5 * sizeof(int), cudaMemcpyHostToDevice);
+
+    add<<<1,5>>>(d_a, d_b, d_c);
+
+    cudaMemcpy(h_c, d_c, 5 * sizeof(int), cudaMemcpyDeviceToHost);
+
+    printf("Vector Addition Result:\n");
+
+    for(int i = 0; i < 5; i++)
+    {
+        printf("%d ", h_c[i]);
+    }
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+    return 0;
+}
+
+!nvcc vector_add.cu -o vector_add
+
+!./vector_add
